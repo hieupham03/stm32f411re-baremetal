@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# VS Code (giữ lại .vscode/ config)
+.vscode/*.log
+
+# OpenOCD temp
+*.cfg.bak
+
+# Python cache (dùng cho send_ota.py)
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
