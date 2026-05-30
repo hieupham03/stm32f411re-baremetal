@@ -20,27 +20,27 @@ void RingBuffer_Init(RingBuffer *rb) {
 // Hàm ghi dữ liệu
 int RingBuffer_Write(RingBuffer *rb, uint8_t data_in) {
     if (rb->count == BUFFER_SIZE) {
-        return -1; // Buffer đầy
+        return -1; 
     }
     
     rb->buffer[rb->write_index] = data_in;
-    rb->write_index++; // Tự động quay vòng nhờ uint8_t
+    rb->write_index++; 
     rb->count++;
     
-    return 0; // Thành công
+    return 0; 
 }
 
 // Hàm đọc dữ liệu
 int RingBuffer_Read(RingBuffer *rb, uint8_t *data_out) {
     if (rb->count == 0) {
-        return -1; // Buffer trống
+        return -1; 
     }
     
     *data_out = rb->buffer[rb->read_index];
-    rb->read_index++; // Tự động quay vòng nhờ uint8_t
+    rb->read_index++;
     rb->count--;
     
-    return 0; // Thành công
+    return 0; 
 }
 
 // Hàm kiểm tra trạng thái trống
