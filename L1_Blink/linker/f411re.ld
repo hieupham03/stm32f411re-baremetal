@@ -12,24 +12,30 @@ __max_heap_size = 0x200;
 __max_stack_size = 0x400;
 
 SECTIONS {
+    .isr_vector :
+    {
+        . = ALIGN(4);
+        KEEP(*(.isr_vector))
+    } > FLASH
+
     .text :
     {
         . = ALIGN(4);
-        *(.isr_vector_tbl)  
-        *(.text)          
-        *(.rodata)     
+        *(.text)
+        *(.rodata)
         . = ALIGN(4);
-        _etext = .;       
+        _etext = .;
     } > FLASH
 
     .data :
     {
         . = ALIGN(4);
-        _sdata = .;        
+        _sidata = LOADADDR(.data);
+        _sdata = .;
         *(.data)
         . = ALIGN(4);
-        _edata = .;        
-    } > SRAM AT> FLASH     
+        _edata = .;
+    } > SRAM AT> FLASH
 
     .bss :
     {
