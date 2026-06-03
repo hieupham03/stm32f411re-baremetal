@@ -1,0 +1,21 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug (OpenOCD + ST-Link)",
+            "type": "cortex-debug",
+            "request": "launch",
+            "servertype": "openocd",
+            // Chọn đúng file .elf của bài đang học, ví dụ:
+            "executable": "${workspaceFolder}/L1_Blink/build/blink.elf",
+            "configFiles": [
+                "interface/stlink.cfg",
+                "target/stm32f4x.cfg"
+            ],
+            // Bỏ comment dòng dưới khi đã tải file SVD để xem Peripherals panel
+            // "svdFile": "${workspaceFolder}/docs/STM32F411.svd",
+            "runToEntryPoint": "main",
+            "preLaunchTask": "Build Active Lesson"
+        }
+    ]
+}

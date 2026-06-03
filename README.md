@@ -1,209 +1,70 @@
-# STM32F411RE Bare Metal — Khóa học lập trình MCU từ không
+# Dự án Lập trình Bare-Metal STM32F411RE
 
-Dự án học tập **lập trình bare metal MCU STM32F411RE** trên Nucleo-F411RE board. Từ GPIO cơ bản đến OTA bootloader, không dùng HAL hay CubeMX.
-
----
-
-##  Nội dung chính
-
-| Bài | Tên | Nội dung | File chính |
-|-----|-----|---------|-----------|
-| **L0** | C Foundation | Bit manipulation, ring buffer | `bit_math.h`, `ring_buffer.c` |
-| **L1** | Blink LED | GPIO output, ISR vector, linker script | `main.c`, `startup_f4.c` |
-| **L2** | SysTick Timer | System tick interrupt, delay | `systick.c`, `systick.h` |
-| **L3** | Basic Timer + INT | TIM2 interrupt (1ms) | `tim2.c`, `tim2.h` |
-| **L4** | Advanced Timer PWM | PWM output với TIM1 | `tim1_pwm.c`, `tim1_pwm.h` |
-| **L5** | UART + NVIC | Serial communication, interrupt | `uart.c`, `uart.h` |
-| **L6** | UART + DMA | Transfer data không dùng CPU | `uart_dma.c`, `uart_dma.h` |
-| **L7** | Flash Memory | Read/write internal FLASH | `flash.c`, `flash.h` |
-| **L8** | OTA Bootloader | Bootloader + firmware update | `boot_f411.ld`, `app_f411.ld` |
+Dự án này tập trung vào việc nghiên cứu và phát triển mã nguồn ở cấp độ thanh ghi (register level) cho vi điều khiển STM32F411RE trên board mạch Nucleo-F411RE. Mã nguồn được phát triển trực tiếp thông qua các file định nghĩa thanh ghi chuẩn CMSIS, không sử dụng các thư viện trừu tượng như STM32Cube HAL hay LL.
 
 ---
 
-##  Mục tiêu học tập
+## Kiến trúc phần mềm
 
-1. **Hiểu cấu trúc MCU** — thanh ghi, memory map, boot sequence
-2. **Thao tác peripheral** — RCC, GPIO, Timer, UART, DMA
-3. **Xử lý interrupt** — ISR vector, NVIC, SysTick
-4. **PWM & analog** — PWM output, ADC (optional)
-5. **Memory management** — FLASH write/erase, bootloader
-6. **Build & debug** — ARM toolchain, OpenOCD, linker script
-7. **Comunicación** — UART, serial monitor
-8. **OTA firmware update** — bootloader architecture
+Hệ thống được tổ chức theo cấu trúc phân lớp (Layered Architecture):
+
+* **app/**: Tầng ứng dụng (Application Layer). Chứa logic nghiệp vụ chính của hệ thống và độc lập với phần cứng.
+  * `app/src/main.c`: Điểm khởi đầu của chương trình và vòng lặp giám sát tác vụ.
+* **bsp/** (Board Support Package): Tầng hỗ trợ phần cứng. Chứa các driver điều khiển ngoại vi ở mức thanh ghi do lập trình viên tự xây dựng.
+  * `bsp/src/gpio.c`: Driver cấu hình và điều khiển các chân GPIO.
+  * `bsp/src/systick.c`: Driver cấu hình ngắt thời gian thực SysTick để đo lường thời gian.
+* **core/**: Tầng khởi động và cấu hình cốt lõi của vi điều khiển.
+  * `core/src/startup_stm32f411xe.c`: File khởi động viết bằng ngôn ngữ C (thực hiện cấu hình phân vùng RAM/BSS và thiết lập Vector Table).
+  * `core/src/system_stm32f4xx.c`: Hàm khởi tạo hệ thống và cấu hình clock PLL lên tần số 100MHz từ nguồn HSI.
+  * `core/inc/`: Chứa các file tiêu chuẩn CMSIS định nghĩa địa chỉ thanh ghi của chip.
+* **Makefile**: Kịch bản quản lý quá trình biên dịch và liên kết mã nguồn.
+* **f411re.ld**: Linker script chịu trách nhiệm phân bổ sơ đồ bộ nhớ FLASH và SRAM vật lý.
 
 ---
 
-##  Yêu cầu
+## Yêu cầu hệ thống
 
-### Hardware
-- **Board**: Nucleo-F411RE (or STM32F411RE)
-- **Debugger**: ST-Link V2 (built-in)
-- **Cable**: Micro USB (power + debug)
-- **Serial adapter** (optional, for UART output): CH340, FT232RL, v.v.
+### Phần cứng
+* Board mạch Nucleo-F411RE (hoặc mạch phát triển sử dụng chip STM32F411RE).
+* Cáp USB kết nối để nạp chương trình và giao tiếp cổng nối tiếp (UART).
 
-### Software
-- **Compiler**: `arm-none-eabi-gcc` (GNU ARM Embedded Toolchain)
-- **Build**: `mingw32-make` (Windows) hoặc `make` (Linux/Mac)
-- **Programmer**: OpenOCD
-- **Terminal**: PuTTY, Tera Term, hoặc `minicom`
+### Công cụ phát triển
+* Trình biên dịch: `arm-none-eabi-gcc` (GNU Arm Embedded Toolchain).
+* Công cụ build: `make` (đối với Linux/Mac) hoặc `mingw32-make` (đối với Windows).
+* Công cụ nạp và gỡ lỗi: `openocd`.
 
-### Installation
+---
 
-**Windows (MSYS2)**
+## Hướng dẫn vận hành
+
+Thực hiện các lệnh sau tại thư mục gốc của dự án thông qua Terminal:
+
+### Làm sạch thư mục build cũ
 ```bash
-pacman -S mingw-w64-x86_64-arm-none-eabi-gcc
-pacman -S mingw-w64-x86_64-arm-none-eabi-gdb
-pacman -S mingw-w64-x86_64-openocd
-pacman -S make
+mingw32-make clean
 ```
 
-**Linux (Ubuntu)**
+### Biên dịch dự án
 ```bash
-sudo apt install arm-none-eabi-gcc arm-none-eabi-gdb openocd make
+mingw32-make
 ```
 
----
-
-##  Cấu trúc dự án
-
-```
-STM32F411RE-Bare-Metal/
-├── L0_C_Foundation/          # Nền tảng C (bit macros, ring buffer)
-│   ├── bit_math.h
-│   ├── ring_buffer.c
-│   └── README.md
-├── L1_Blink/                 # GPIO LED blink
-│   ├── src/
-│   │   ├── main.c
-│   │   ├── startup_f4.c
-│   │   └── bit_math.h
-│   ├── linker/
-│   │   └── f411re.ld
-│   ├── inc/
-│   ├── Makefile
-│   └── README.md
-├── L2_SysTickTimer/          # SysTick interrupt
-├── L3_BasicTimer_INT/        # TIM2 interrupt (1ms)
-├── L4_AdvancedTimer_PWM/     # TIM1 PWM output
-├── L5_Uart_NVIC/             # UART + interrupt
-├── L6_Uart_DMA/              # UART + DMA
-├── L7_Flash/                 # Internal FLASH read/write
-├── L8_OTA/                   # Bootloader + OTA
-│   ├── Bootloader/
-│   │   ├── boot_f411.ld
-│   │   └── Src/main.c
-│   ├── Application/
-│   │   ├── app_f411.ld
-│   │   └── Src/
-│   └── send_ota.py           # Python script upload firmware
-├── docs/                     # Tài liệu kỹ thuật
-│   └── README.md             # Links to PDFs
-└── tailieu/                  # Notes, task list
-```
-
----
-
-##  Build & Flash (Tổng quát)
-
-### Build một bài
+### Nạp chương trình vào vi điều khiển
 ```bash
-cd L1_Blink
-mingw32-make              # Build (chỉnh Makefile nếu cần)
-mingw32-make size         # Xem kích thước
-mingw32-make clean        # Dọn build
-```
-
-### Flash
-```bash
-mingw32-make flash        # Build + flash via OpenOCD
-```
-
-**Kết quả:**
-```
-arm-none-eabi-size build/blink_led.elf
-  text    data     bss     dec     hex filename
-  1024     256     512    1792     700 build/blink_led.elf
-
-Flashing...
-OpenOCD 0.11.0
-STM32F4x flash loader, SAM-BA Compliant Bootloader
-Firmware programmed successfully!
-```
-
-### Serial Monitor
-```bash
-# Connect to COM port (identify từ Device Manager)
-# L5 onwards support UART output
-minicom -D /dev/ttyUSB0 -b 9600
-# or PuTTY: COM3 @ 9600 baud
+mingw32-make flash
 ```
 
 ---
 
-## Trình tự học
+## Lộ trình phát triển Driver hệ thống
 
-**Recommende flow:**
-1. **L0** — Hiểu bit manipulation, xem `bit_math.h`, compile `ring_buffer.c`
-2. **L1** — Build first LED blink, hiểu boot, linker, ISR vector
-3. **L2** — SysTick, non-blocking delay thay dummy loop
-4. **L3** — Timer interrupt, chạy task mỗi 1ms
-5. **L4** — PWM, điều chỉnh độ sáng LED hoặc servo
-6. **L5** — UART + interrupt, gửi data sang computer
-7. **L6** — DMA, transfer dữ liệu không dùng CPU
-8. **L7** — FLASH, lưu config vào internal memory
-9. **L8** — Bootloader, OTA firmware update
+Quy trình tự xây dựng các module driver từ mức cơ bản đến nâng cao:
 
----
-
-## Thanh ghi chính (STM32F411RE)
-
-| Peripheral | Base Addr | Clock | Chức năng |
-|-----------|-----------|-------|----------|
-| **RCC** | 0x40023800 | — | Reset & Clock |
-| **GPIOA-E** | 0x40020000-0x40020C00 | AHB1 | General I/O |
-| **TIM1** | 0x40010000 | APB2 | Advanced Timer (PWM) |
-| **TIM2-5** | 0x40000000-0x40000400 | APB1 | Basic/General Timer |
-| **UART1** | 0x40011000 | APB2 | Serial (PA9/PA10) |
-| **UART2-4** | 0x40004400-0x40004C00 | APB1 | Serial alternatives |
-| **DMA1-2** | 0x40026000-0x40026400 | AHB1 | Direct Memory Access |
-| **FLASH** | 0x40023C00 | AHB1 | FLASH control |
-| **NVIC** | 0xE000E000 | — | Interrupt controller |
-
----
-
-## Troubleshooting
-
-**"arm-none-eabi-gcc not found"**
-- Cài ARM toolchain từ gnu-mcu-eclipse hoặc MSYS2
-
-**"openocd not found"**
-- Cài openocd, hoặc add vào PATH
-
-**Flash lỗi "connection refused"**
-- Kiểm tra ST-Link kết nối
-- Chạy: `openocd -f interface/stlink.cfg -f target/stm32f4x.cfg`
-- Check Device Manager: STM32 STLink
-
-**UART không nhận data**
-- Kiểm tra baud rate (thường 9600)
-- Xem `uart.h` configure pins (PA9/PA10 for UART1)
-- Verify RCC enable cho UART peripheral
-
-**Linker error "undefined reference"**
-- Check linker script `*.ld` symbols: `_sidata`, `_sdata`, `_edata`, `_sbss`, `_ebss`
-- Xem map file: `cat build/*.map`
-
----
-
-##  Tài liệu tham khảo
-
-**Tải từ** [st.com](https://www.st.com/en/microcontrollers-microprocessors/stm32f411re.html):
-- **RM0383** — Reference Manual (thanh ghi)
-- **PM0214** — Cortex-M4 Programming Manual
-- **Datasheet** — Pinout, electrical specs
-- **SVD file** — debugger support
-
-Xem `docs/README.md` để link tải.
-
----
-
+1. **Khởi động hệ thống và GPIO**: Hiện thực hóa cơ chế khởi tạo bộ nhớ RAM/BSS trong file Startup và điều khiển xuất nhập GPIO cơ bản (nháy LED).
+2. **Cấu hình PLL Clock và SysTick**: Thiết lập clock hệ thống đạt 100MHz bằng bộ nhân tần PLL và viết driver định thời ngắt SysTick (non-blocking delay).
+3. **Ngắt Timer cơ bản**: Cấu hình bộ định thời Timer 2 tạo ngắt chu kỳ 1ms phục vụ lập lịch.
+4. **Bộ điều chế độ rộng xung (PWM)**: Cấu hình Timer phát xung PWM ứng dụng điều khiển thiết bị ngoại vi.
+5. **Giao tiếp cổng nối tiếp (UART)**: Truyền nhận dữ liệu với máy tính thông qua cơ chế ngắt NVIC.
+6. **Bộ truy cập bộ nhớ trực tiếp (DMA)**: Cấu hình UART kết hợp với DMA để truyền nhận dữ liệu tốc độ cao, giải phóng tài nguyên CPU.
+7. **Bộ nhớ Flash nội**: Thực hiện các thao tác đọc/ghi dữ liệu cấu hình vào bộ nhớ Flash tích hợp của chip.
+8. **OTA Bootloader**: Thiết kế phân vùng nhớ và lập trình chương trình Bootloader để cập nhật chương trình từ xa thông qua giao thức tự chọn.

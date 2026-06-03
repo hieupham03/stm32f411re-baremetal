@@ -1,0 +1,39 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Active Lesson",
+            "type": "shell",
+            // Thay L1_Blink bằng tên bài đang làm
+            "command": "mingw32-make",
+            "options": {
+                "cwd": "${workspaceFolder}/L1_Blink"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": ["$gcc"]
+        },
+        {
+            "label": "Flash Active Lesson",
+            "type": "shell",
+            "command": "mingw32-make flash",
+            "options": {
+                "cwd": "${workspaceFolder}/L1_Blink"
+            },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Clean Active Lesson",
+            "type": "shell",
+            "command": "mingw32-make clean",
+            "options": {
+                "cwd": "${workspaceFolder}/L1_Blink"
+            },
+            "group": "build",
+            "problemMatcher": []
+        }
+    ]
+}
