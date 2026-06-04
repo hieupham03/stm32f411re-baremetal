@@ -1,11 +1,11 @@
 #include <stdint.h>
 
 extern uint32_t _estack;
-extern uint32_t _sidata; 
-extern uint32_t _sdata;  
-extern uint32_t _edata;  
+extern uint32_t _sidata;
+extern uint32_t _sdata; 
+extern uint32_t _edata;
 extern uint32_t _sbss;  
-extern uint32_t _ebss;   
+extern uint32_t _ebss; 
 
 extern int main(void);
 extern void SystemInit(void);
@@ -15,7 +15,7 @@ void Default_Handler(void) {
     while (1);
 }
 
-// System Exceptions 
+// System Exceptions
 void NMI_Handler(void)          __attribute__((weak, alias("Default_Handler")));
 void HardFault_Handler(void)    __attribute__((weak, alias("Default_Handler")));
 void MemManage_Handler(void)    __attribute__((weak, alias("Default_Handler")));
@@ -26,7 +26,7 @@ void DebugMon_Handler(void)     __attribute__((weak, alias("Default_Handler")));
 void PendSV_Handler(void)       __attribute__((weak, alias("Default_Handler")));
 void SysTick_Handler(void)      __attribute__((weak, alias("Default_Handler")));
 
-// External Interrupts 
+// External Interrupts
 void WWDG_IRQHandler(void)                   __attribute__((weak, alias("Default_Handler")));
 void PVD_IRQHandler(void)                    __attribute__((weak, alias("Default_Handler")));
 void TAMP_STAMP_IRQHandler(void)             __attribute__((weak, alias("Default_Handler")));
@@ -85,7 +85,7 @@ void FPU_IRQHandler(void)                    __attribute__((weak, alias("Default
 void SPI4_IRQHandler(void)                   __attribute__((weak, alias("Default_Handler")));
 void SPI5_IRQHandler(void)                   __attribute__((weak, alias("Default_Handler")));
 
-// Vector Table
+// Vector Table 
 __attribute__((section(".isr_vector")))
 void* const isr_vector[] = {
     (void*)&_estack,
@@ -95,10 +95,10 @@ void* const isr_vector[] = {
     (void*)MemManage_Handler,
     (void*)BusFault_Handler,
     (void*)UsageFault_Handler,
-    0, 0, 0, 0,
+    0, 0, 0, 0, 
     (void*)SVC_Handler,
     (void*)DebugMon_Handler,
-    0, // Reserved
+    0,
     (void*)PendSV_Handler,
     (void*)SysTick_Handler,
 
@@ -169,7 +169,7 @@ void* const isr_vector[] = {
     (void*)SPI4_IRQHandler,
     (void*)SPI5_IRQHandler,
 };
-
+// Reset Handler
 void Reset_Handler(void) {
     uint32_t *pSrc = &_sidata;
     uint32_t *pDest = &_sdata;

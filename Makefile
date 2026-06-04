@@ -5,18 +5,16 @@ SIZE      := arm-none-eabi-size
 TARGET    := app
 BUILD     := build
 
-# Include Directories
 INCS      := -Iapp/inc -Ibsp/inc -Icore/inc
 
-# Source files list
 SRCS      := app/src/main.c \
              bsp/src/bsp.c \
              bsp/src/gpio.c \
              bsp/src/systick.c \
+             bsp/src/button.c \
              core/src/startup_stm32f411xe.c \
              core/src/system_stm32f4xx.c
 
-# Compiler Flags
 CFLAGS    := -mcpu=cortex-m4 \
              -mthumb \
              -mfloat-abi=hard \
@@ -32,7 +30,6 @@ CFLAGS    := -mcpu=cortex-m4 \
              -DSTM32F411xE \
              $(INCS)
 
-# Linker Flags
 LDFLAGS   := -Tf411re.ld \
              -nostartfiles \
              -nostdlib \
@@ -40,10 +37,8 @@ LDFLAGS   := -Tf411re.ld \
              -Wl,-Map=$(BUILD)/$(TARGET).map \
              -Wl,--cref
 
-# Generate Object files names inside BUILD directory
 OBJS      := $(patsubst %.c,$(BUILD)/%.o,$(SRCS))
 
-# Cross-platform directory creation helper
 ifeq ($(OS),Windows_NT)
     MKDIR = if not exist "$(subst /,\,$(1))" mkdir "$(subst /,\,$(1))"
 else
@@ -68,7 +63,6 @@ $(BUILD)/$(TARGET).hex: $(BUILD)/$(TARGET).elf
 	@echo "[OBJCOPY] $@"
 	@$(OBJCOPY) -O ihex $< $@
 
-# Rule to compile C files into Object files maintaining directory layout in build folder
 $(BUILD)/%.o: %.c
 	@echo "[CC] $<"
 	@$(call MKDIR,$(dir $@))
